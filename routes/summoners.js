@@ -11,7 +11,8 @@ var accountId = 0;
 var json = null;
 
 function getAccountId(username, region, callback){
-
+  console.log(api_key);
+  console.log(key);
   var options ={
     url: 'https://'+region+'.api.riotgames.com/lol/summoner/v3/summoners/by-name/'+username + key,
     method: 'GET'
