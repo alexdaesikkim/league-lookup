@@ -1,6 +1,5 @@
 //eslint-disable-next-line
 import React, { Component } from 'react';
-import logo from './logo.svg';
 import './App.css';
 import $ from 'jquery';
 
@@ -9,7 +8,7 @@ var createReactClass = require('create-react-class');
 var App = createReactClass({
   getInitialState(){
     return{
-      roles: [0,0,0,0,0],
+      roles: [[0, 0.0],[0, 0.0],[0, 0.0],[0, 0.0],[0, 0.0]],
       region: 'na1',
       region_name: 'NA',
       show: false,
@@ -36,28 +35,34 @@ var App = createReactClass({
     }
   },
 
-  updateRoles(json){
-    var newRoles = [0,0,0,0,0];
+  updateRoles(json, matches){
+    var newRoles = [[0, 0.0],[0, 0.0],[0, 0.0],[0, 0.0],[0, 0.0]];
     var name = this.state.username;
     console.log(json);
+
+    //updating array, no need to change json itself
+    //eslint-disable-next-line
     json.map(function(match){
       var lane = match.lane;
       switch(lane){
         case "TOP":
-          newRoles[0]++;
+          newRoles[0][0]++;
           break;
         case "JUNGLE":
-          newRoles[1]++;
+          newRoles[1][0]++;
           break;
         case "MID":
-          newRoles[2]++;
+          newRoles[2][0]++;
           break;
-        case "BOTTOM":
-          if(match.role === "DUO_CARRY") newRoles[3]++;
-          else newRoles[4]++;
+        default:
+          if(match.role === "DUO_CARRY") newRoles[3][0]++;
+          else newRoles[4][0]++;
           break;
       }
     });
+    for(var i = 0; i < 5; i++){
+      newRoles[i][1] = newRoles[i][0]/matches;
+    }
     this.setState({
       roles: newRoles,
       show: true,
@@ -93,7 +98,7 @@ var App = createReactClass({
           }
           else{
             console.log(data);
-            that.updateRoles(data.matches);
+            that.updateRoles(data.matches, data.totalGames);
           }
         },
         error: function(data){
@@ -112,40 +117,41 @@ var App = createReactClass({
       return(
         <div>
           <div className="row justify-content-center">
-            <h3>{this.state.name}&#39;s data for past 20 games</h3>
+            <br/>
+            <h3>{this.state.name}&#39;s data for past 20 games on region {this.state.region_name}</h3>
             <table className="table text-left">
               <thead>
                 <tr>
                   <th>Role</th>
                   <th># of times Played</th>
-                  <th>Winrate</th>
+                  <th>% of times Played</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
                   <th scope="row">Top</th>
-                  <td>{this.state.roles[0]}</td>
-                  <td></td>
+                  <td>{this.state.roles[0][0]}</td>
+                  <td>{this.state.roles[0][1]*100+'%'}</td>
                 </tr>
                 <tr>
                   <th scope="row">Jungle</th>
-                  <td>{this.state.roles[1]}</td>
-                  <td></td>
+                  <td>{this.state.roles[1][0]}</td>
+                  <td>{this.state.roles[1][1]*100+'%'}</td>
                 </tr>
                 <tr>
                   <th scope="row">Mid</th>
-                  <td>{this.state.roles[2]}</td>
-                  <td></td>
+                  <td>{this.state.roles[2][0]}</td>
+                  <td>{this.state.roles[2][1]*100+'%'}</td>
                 </tr>
                 <tr>
                   <th scope="row">ADC</th>
-                  <td>{this.state.roles[3]}</td>
-                  <td></td>
+                  <td>{this.state.roles[3][0]}</td>
+                  <td>{this.state.roles[3][1]*100+'%'}</td>
                 </tr>
                 <tr>
                   <th scope="row">Support</th>
-                  <td>{this.state.roles[4]}</td>
-                  <td></td>
+                  <td>{this.state.roles[4][0]}</td>
+                  <td>{this.state.roles[4][1]*100+'%'}</td>
                 </tr>
               </tbody>
             </table>
@@ -202,19 +208,22 @@ var App = createReactClass({
 
   render: function(){
     return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <h1 className="App-title">Welcome to React</h1>
-        </header>
-        <div>
-          {this.noticePane()}
+      <div>
+        <div className="App">
+          <header className="App-header">
+            <h1 className="App-title">Summoner Lookup</h1>
+            <br/>
+            <div>
+              {this.dropdownButton()} <input onChange={this.changeUsername}></input>
+              <br/>
+              <button className="btn btn-primary" onClick={this.expressCall}>Search</button>
+            </div>
+            <br/>
+          </header>
         </div>
         <div className="container">
           <div>
-            {this.dropdownButton()}<input onChange={this.changeUsername}></input>
-            <br/>
-            <button className="btn btn-primary" onClick={this.expressCall}>Search</button>
+            {this.noticePane()}
           </div>
           <br/>
           <div>
