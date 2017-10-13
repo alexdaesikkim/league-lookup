@@ -3,18 +3,66 @@ var qs = require('querystring');
 var request = require('request');
 var router = express.Router();
 var api_key = require('./api_key');
+const test_summoner_json = require('./summoner_json');
+const test_matches_json = require('./matches_json');
+var test = true;
+
 const key = api_key.key;
+
 //variable key is set in such way: var key = "?api_key=<API KEY>"
 
 var region = '';
 var accountId = 0;
-var json = null;
+var return_json = null;
+
+function parseLaneData(matches){
+  var lanes = {
+    top: 0,
+    jungle: 0,
+    mid: 0,
+    adc: 0,
+    support: 0,
+    total: 0
+    //Riot API's bug: If done by season total games is not accurate
+  }
+
+  matches.matches.map(function(match){
+    var lane = match.lane;
+    switch(lane){
+      case "TOP":
+        lanes.top++;
+        lanes.total++;
+        break;
+      case "JUNGLE":
+        lanes.jungle++
+        lanes.total++;;
+        break;
+      case "MID":
+        lanes.mid++;
+        lanes.total++;
+        break;
+      default:
+        if(match.role === "DUO_CARRY") lanes.adc++;
+        else lanes.support++;
+        lanes.total++;
+        break;
+    }
+  });
+  return lanes;
+}
 
 function getAccountId(username, region, callback){
-  console.log(api_key);
-  console.log(key);
+  if(test){
+    accountId = test_summoner_json.accountId;
+    console.log("Test, accountid grabbed from json. Account ID is " + accountId)
+    getRecentMatches("na1", function(){
+      callback();
+    });
+    return;
+  }
+
   var options ={
-    url: 'https://'+region+'.api.riotgames.com/lol/summoner/v3/summoners/by-name/'+username + key,
+    url: 'https://'+region+'.api.riotgames.com/lol/summoner/v3/summoners/by-name/'+ username + key,
     method: 'GET'
   }
 
@@ -31,7 +79,7 @@ function getAccountId(username, region, callback){
       }
       else{
         console.log("bad request");
-        json = JSON.parse(body);
+        return_json = JSON.parse(body);
         callback();
       }
     }
@@ -39,15 +87,23 @@ function getAccountId(username, region, callback){
 }
 
 function getRecentMatches(region, callback){
+  if(test){
+    match_json = test_matches_json;
+    console.log("Test, matches grabbed from json");
+    return_json = parseLaneData(match_json);
+    callback();
+    return;
+  }
+
   var options = {
-    url: 'https://'+ region +'.api.riotgames.com/lol/match/v3/matchlists/by-account/' + accountId + '/recent' + key,
+    url: 'https://'+ region +'.api.riotgames.com/lol/match/v3/matchlists/by-account/' + accountId + key + '&queue=400&queue=420&queue=440&season=9',
     method: 'GET'
   }
 
   request(options, function(error, response, body){
     if(!error && response.statusCode === 200){
       console.log("grabbed matches");
-      json = JSON.parse(body);
+      return_json = parseLaneData(JSON.parse(body))
       callback();
     }
     else if(error){
@@ -63,20 +119,28 @@ function getRecentMatches(region, callback){
 }
 
 router.get('/:region/:username/', function(req, res, next) {
-  console.log("Retrieving Data from region " + req.params.region+ " for user "+req.params.username)
+  if(test){
+    getAccountId("supernovamaniac", "na1", function(){
+      console.log("Test finished");
+      res.json(return_json);
+      return_json = null;
+      res.end();
+    })
+    return;
+  }
+  console.log("Retrieving Data from region " + req.params.region+ " for user "+req.params.username);
   //note to self: look at async/await and try to adopt that. this code, while functional, just looks terrible to look at
   getAccountId(req.params.username, req.params.region, function(){
-    console.log(json);
-      if(json){
-        res.json(json);
-        json = null;
+      if(return_json){
+        res.json(return_json);
+        return_json = null;
         res.end();
       }
       else{
         getRecentMatches(req.params.region, function(){
           console.log("Finished Grabbing Matches");
-          res.json(json);
-          json = null;
+          res.json(return_json);
+          return_json = null;
           res.end();
         }
       )}
