@@ -8,7 +8,12 @@ var createReactClass = require('create-react-class');
 var App = createReactClass({
   getInitialState(){
     return{
-      roles: [[0, 0.0],[0, 0.0],[0, 0.0],[0, 0.0],[0, 0.0]],
+      top: 0,
+      jungle: 0,
+      mid: 0,
+      adc: 0,
+      support: 0,
+      match_number: 0,
       region: 'na1',
       region_name: 'NA',
       show: false,
@@ -35,43 +40,6 @@ var App = createReactClass({
     }
   },
 
-  updateRoles(json, matches){
-    var newRoles = [[0, 0.0],[0, 0.0],[0, 0.0],[0, 0.0],[0, 0.0]];
-    var name = this.state.username;
-    console.log(json);
-
-    //updating array, no need to change json itself
-    //eslint-disable-next-line
-    json.map(function(match){
-      var lane = match.lane;
-      switch(lane){
-        case "TOP":
-          newRoles[0][0]++;
-          break;
-        case "JUNGLE":
-          newRoles[1][0]++;
-          break;
-        case "MID":
-          newRoles[2][0]++;
-          break;
-        default:
-          if(match.role === "DUO_CARRY") newRoles[3][0]++;
-          else newRoles[4][0]++;
-          break;
-      }
-    });
-    for(var i = 0; i < 5; i++){
-      newRoles[i][1] = newRoles[i][0]/matches;
-    }
-    this.setState({
-      roles: newRoles,
-      show: true,
-      name: name,
-      errorState: '',
-      error: ''
-    });
-  },
-
   expressCall(){
     var username = this.state.username;
     //assumption: A space counts as a character
@@ -88,7 +56,7 @@ var App = createReactClass({
         url: '/summoners/'+that.state.region+'/'+that.state.username,
         method: 'GET',
         success: function(data){
-          console.log(data.status)
+          console.log(data.status);
           if(data.status){
             that.setState({
               show: false,
@@ -98,14 +66,25 @@ var App = createReactClass({
           }
           else{
             console.log(data);
-            that.updateRoles(data.matches, data.totalGames);
+            that.setState({
+              top: data.top,
+              jungle: data.jungle,
+              mid: data.mid,
+              adc: data.adc,
+              support: data.support,
+              match_number: data.total,
+              show: true,
+              name: that.state.username,
+              errorState: '',
+              error: ''
+            });
           }
         },
         error: function(data){
           console.log("HI");
           that.setState({
-            errorState: '',
-            error: 'error!'
+            errorState: 'alert alert-danger',
+            error: 'Backend Error'
           })
         }
       })
@@ -118,7 +97,7 @@ var App = createReactClass({
         <div>
           <div className="row justify-content-center">
             <br/>
-            <h3>{this.state.name}&#39;s data for past 20 games on region {this.state.region_name}</h3>
+            <h3>{this.state.name}&#39;s data for this season&#39;s {this.state.match_number} games on region {this.state.region_name}</h3>
             <table className="table text-left">
               <thead>
                 <tr>
@@ -130,32 +109,41 @@ var App = createReactClass({
               <tbody>
                 <tr>
                   <th scope="row">Top</th>
-                  <td>{this.state.roles[0][0]}</td>
-                  <td>{this.state.roles[0][1]*100+'%'}</td>
+                  <td>{this.state.top}</td>
+                  <td>{Math.round((this.state.top * 1000.0) / this.state.match_number)/10 + "%"}</td>
                 </tr>
                 <tr>
                   <th scope="row">Jungle</th>
-                  <td>{this.state.roles[1][0]}</td>
-                  <td>{this.state.roles[1][1]*100+'%'}</td>
+                  <td>{this.state.jungle}</td>
+                  <td>{Math.round((this.state.jungle * 1000.0) / this.state.match_number)/10 + "%"}</td>
                 </tr>
                 <tr>
                   <th scope="row">Mid</th>
-                  <td>{this.state.roles[2][0]}</td>
-                  <td>{this.state.roles[2][1]*100+'%'}</td>
+                  <td>{this.state.mid}</td>
+                  <td>{Math.round((this.state.mid * 1000.0) / this.state.match_number)/10 + "%"}</td>
                 </tr>
                 <tr>
                   <th scope="row">ADC</th>
-                  <td>{this.state.roles[3][0]}</td>
-                  <td>{this.state.roles[3][1]*100+'%'}</td>
+                  <td>{this.state.adc}</td>
+                  <td>{Math.round((this.state.adc * 1000.0) / this.state.match_number)/10 + "%"}</td>
                 </tr>
                 <tr>
                   <th scope="row">Support</th>
-                  <td>{this.state.roles[4][0]}</td>
-                  <td>{this.state.roles[4][1]*100+'%'}</td>
+                  <td>{this.state.support}</td>
+                  <td>{Math.round((this.state.support * 1000.0) / this.state.match_number)/10 + "%"}</td>
                 </tr>
               </tbody>
             </table>
           </div>
+        </div>
+      )
+    }
+    else{
+      return(
+        <div className="row text-center">
+          Search the number of times the user has played a particular role on Summoners Rift, Draft Pick only.
+          <br/>
+          Currently only supports current season.
         </div>
       )
     }

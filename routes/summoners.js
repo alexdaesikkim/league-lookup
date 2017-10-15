@@ -2,10 +2,10 @@ var express = require('express');
 var qs = require('querystring');
 var request = require('request');
 var router = express.Router();
-var api_key = require('./api_key');
+var api_key = require('./api_key').key;
 const test_summoner_json = require('./summoner_json');
 const test_matches_json = require('./matches_json');
-var test = true;
+var test = false;
 
 const key = api_key.key;
 
@@ -62,7 +62,7 @@ function getAccountId(username, region, callback){
   }
 
   var options ={
-    url: 'https://'+region+'.api.riotgames.com/lol/summoner/v3/summoners/by-name/'+ username + key,
+    url: 'https://'+region+'.api.riotgames.com/lol/summoner/v3/summoners/by-name/'+ username + api_key,
     method: 'GET'
   }
 
@@ -80,6 +80,8 @@ function getAccountId(username, region, callback){
       else{
         console.log("bad request");
         return_json = JSON.parse(body);
+        console.log(options.url);
+        console.log(return_json)
         callback();
       }
     }
@@ -96,7 +98,7 @@ function getRecentMatches(region, callback){
   }
 
   var options = {
-    url: 'https://'+ region +'.api.riotgames.com/lol/match/v3/matchlists/by-account/' + accountId + key + '&queue=400&queue=420&queue=440&season=9',
+    url: 'https://'+ region +'.api.riotgames.com/lol/match/v3/matchlists/by-account/' + accountId + api_key + '&queue=400&queue=420&queue=440&season=9',
     method: 'GET'
   }
 
