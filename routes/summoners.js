@@ -5,6 +5,7 @@ var router = express.Router();
 var api_key = require('./api_key').key;
 const test_summoner_json = require('./summoner_json');
 const test_matches_json = require('./matches_json');
+const champions_json = require('./champions.json');
 var test = false;
 
 const key = api_key.key;
@@ -15,38 +16,64 @@ var region = '';
 var accountId = 0;
 var return_json = null;
 
-function parseLaneData(matches){
+function idToName(id){
+  return champions_json.data[id].name;
+}
+
+function parseData(matches){
   var lanes = {
     top: 0,
     jungle: 0,
     mid: 0,
     adc: 0,
     support: 0,
+    champions: {
+      top: {},
+      jungle: {},
+      mid: {},
+      adc: {},
+      support: {}
+    },
     total: 0
     //Riot API's bug: If done by season total games is not accurate
   }
 
+  var champions = {};
+  console.log("TESTING HEH");
+
   matches.matches.map(function(match){
     var lane = match.lane;
+    var champion = idToName(match.champion);
     switch(lane){
       case "TOP":
         lanes.top++;
-        lanes.total++;
+        if(lanes.champions.top[champion]) lanes.champions.top[champion]++;
+        else lanes.champions.top[champion] = 1;
         break;
       case "JUNGLE":
-        lanes.jungle++
-        lanes.total++;;
+        lanes.jungle++;
+        if(lanes.champions.jungle[champion]) lanes.champions.jungle[champion]++;
+        else lanes.champions.jungle[champion] = 1;
         break;
       case "MID":
         lanes.mid++;
-        lanes.total++;
+        if(lanes.champions.mid[champion]) lanes.champions.mid[champion]++;
+        else lanes.champions.mid[champion] = 1;
         break;
       default:
-        if(match.role === "DUO_CARRY") lanes.adc++;
-        else lanes.support++;
-        lanes.total++;
+        if(match.role === "DUO_CARRY"){
+          lanes.adc++;
+          if(lanes.champions.adc[champion]) lanes.champions.adc[champion]++;
+          else lanes.champions.adc[champion] = 1;
+        }
+        else {
+          lanes.support++;
+          if(lanes.champions.support[champion]) lanes.champions.support[champion]++;
+          else lanes.champions.support[champion] = 1;
+        }
         break;
     }
+    lanes.total++;
   });
   return lanes;
 }
@@ -92,7 +119,7 @@ function getRecentMatches(region, callback){
   if(test){
     match_json = test_matches_json;
     console.log("Test, matches grabbed from json");
-    return_json = parseLaneData(match_json);
+    return_json = parseData(match_json);
     callback();
     return;
   }
@@ -105,7 +132,7 @@ function getRecentMatches(region, callback){
   request(options, function(error, response, body){
     if(!error && response.statusCode === 200){
       console.log("grabbed matches");
-      return_json = parseLaneData(JSON.parse(body))
+      return_json = parseData(JSON.parse(body));
       callback();
     }
     else if(error){
