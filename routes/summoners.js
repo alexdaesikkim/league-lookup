@@ -6,7 +6,7 @@ var api_key = require('./api_key').key;
 const test_summoner_json = require('./summoner_json');
 const test_matches_json = require('./matches_json');
 const champions_json = require('./champions.json');
-var test = false;
+var test = true;
 
 const key = api_key.key;
 

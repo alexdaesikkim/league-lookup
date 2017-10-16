@@ -13,6 +13,7 @@ var App = createReactClass({
       mid: 0,
       adc: 0,
       support: 0,
+      champions: '',
       match_number: 0,
       region: 'na1',
       region_name: 'NA',
@@ -43,7 +44,6 @@ var App = createReactClass({
   expressCall(){
     var username = this.state.username;
     //assumption: A space counts as a character
-    //TODO: regexp to filter out anything not alphabetical
     if(username === '' || username.length < 3 || username.length > 16){
       this.setState({
         errorState: 'alert alert-warning',
@@ -72,6 +72,7 @@ var App = createReactClass({
               mid: data.mid,
               adc: data.adc,
               support: data.support,
+              champions: data.champoins,
               match_number: data.total,
               show: true,
               name: that.state.username,
@@ -217,10 +218,84 @@ var App = createReactClass({
           <div>
             {this.displayTable()}
           </div>
+          <div id="accordion" role="tablist">
+            <Lanes lane="Top" champions = {this.state.champions} number = {this.state.top} total_number = {this.state.match_number} id="Top" />
+            <Lanes lane="Jungle" champions = {this.state.champions} number = {this.state.jungle} total_number = {this.state.match_number} id="Jungle" />
+            <Lanes lane="Mid" champions = {this.state.champions} number = {this.state.mid} total_number = {this.state.match_number} id="Mid" />
+            <Lanes lane="ADC" champions = {this.state.champions} number = {this.state.adc} total_number = {this.state.match_number} id="ADC" />
+            <Lanes lane="Support" champions = {this.state.champions} number = {this.state.support} total_number = {this.state.match_number} id="Support" />
+          </div>
         </div>
       </div>
     );
   }
 });
+
+var Lanes = createReactClass({
+  getInitialState(){
+    return{
+      champions: [],
+      total_number: 0
+    }
+  },
+
+  sortChampions(){
+    //very small size but regardless using better practice
+    var list = [];
+    var champObj = this.props.chamipons;
+    var total = 0;
+    for(var champion in champObj){
+      list.push([champion, champObj[champion]]);
+      total = total + champObj[champion];
+    }
+    list.sort(function(x, y){
+      return x[1] = y[1];
+    });
+    this.setState({
+      chamipons: list,
+      total_number: total
+    })
+
+  },
+
+  render: function(){
+
+    var champs = this.state.champions.map(function(champ){
+      return(
+        <div>
+          {champ[0]} + " " + {champ[1]};
+        </div>
+      )
+    })
+
+    return(
+      <div className="card">
+        <div className="card-header" role="tab" id={"heading_"+this.props.lane}>
+          <h5 className="mb-0">
+            <a data-toggle="collapse" href={"#"+this.props.lane} aria-expanded="true" aria-controls={this.props.lane}>
+              {this.props.lane}
+            </a>
+            <span className="text-right">
+              {Math.round((this.props.number * 1000.0) / this.props.total_number)/10 + "%"}
+            </span>
+          </h5>
+        </div>
+
+        <div id={this.props.lane} className="collapse" role="tabpanel" aria-labelledby={"heading_"+this.props.lane} data-parent="#accordion">
+          <div className="container">
+            {this.props.number}
+            <br/>
+            Most played Champions:
+            {champs}
+            <br/>
+          </div>
+        </div>
+      </div>
+    );
+
+  }
+})
+
+
 
 export default App;
