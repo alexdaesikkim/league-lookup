@@ -13,7 +13,7 @@ var App = createReactClass({
       mid: 0,
       adc: 0,
       support: 0,
-      champions: '',
+      champions: 0,
       match_number: 0,
       region: 'na1',
       region_name: 'NA',
@@ -65,14 +65,13 @@ var App = createReactClass({
             })
           }
           else{
-            console.log(data);
             that.setState({
               top: data.top,
               jungle: data.jungle,
               mid: data.mid,
               adc: data.adc,
               support: data.support,
-              champions: data.champoins,
+              champions: data.champions,
               match_number: data.total,
               show: true,
               name: that.state.username,
@@ -82,7 +81,6 @@ var App = createReactClass({
           }
         },
         error: function(data){
-          console.log("HI");
           that.setState({
             errorState: 'alert alert-danger',
             error: 'Backend Error'
@@ -90,6 +88,47 @@ var App = createReactClass({
         }
       })
     }
+  },
+  //not sure if this renders well
+  /*
+  displayAccordion(){
+    if(this.state.show){
+      return(
+        <div id="accordion" role="tablist">
+          <Lanes lane="Top" champions = {this.state.champions} number = {this.state.top} total_number = {this.state.match_number} id="Top" />
+          <Lanes lane="Jungle" champions = {this.state.champions} number = {this.state.jungle} total_number = {this.state.match_number} id="Jungle" />
+          <Lanes lane="Mid" champions = {this.state.champions} number = {this.state.mid} total_number = {this.state.match_number} id="Mid" />
+          <Lanes lane="ADC" champions = {this.state.champions} number = {this.state.adc} total_number = {this.state.match_number} id="ADC" />
+          <Lanes lane="Support" champions = {this.state.champions} number = {this.state.support} total_number = {this.state.match_number} id="Support" />
+        </div>
+      );
+    }
+  },
+  */
+
+  sortChampions(champions){
+    //very small size but regardless using better practice
+    var list = [];
+    var total = 0;
+    for(var champion in champions){
+      console.log(champion);
+      console.log(champions[champion]);
+      list.push([champion, champions[champion]]);
+      total = total + champions[champion];
+    }
+    list.sort(function(x, y){
+      return y[1] - x[1];
+    });
+    list = list.map(function(champion){
+      return champion[0] + "(" + (Math.round(champion[1] * 1000.0 / total)/10)+ "%), ";
+    })
+    var str = "";
+    for(var i = 0; i < (list.length < 3 ? list.length : 3); i++){
+      console.log(list[i]);
+      str = str + list[i];
+    }
+    console.log(str);
+    return str.slice(0, -2);
   },
 
   displayTable(){
@@ -105,6 +144,7 @@ var App = createReactClass({
                   <th>Role</th>
                   <th># of times Played</th>
                   <th>% of times Played</th>
+                  <th>Most Played Champions</th>
                 </tr>
               </thead>
               <tbody>
@@ -112,26 +152,31 @@ var App = createReactClass({
                   <th scope="row">Top</th>
                   <td>{this.state.top}</td>
                   <td>{Math.round((this.state.top * 1000.0) / this.state.match_number)/10 + "%"}</td>
+                  <td>{this.sortChampions(this.state.champions.top)}</td>
                 </tr>
                 <tr>
                   <th scope="row">Jungle</th>
                   <td>{this.state.jungle}</td>
                   <td>{Math.round((this.state.jungle * 1000.0) / this.state.match_number)/10 + "%"}</td>
+                  <td>{this.sortChampions(this.state.champions.jungle)}</td>
                 </tr>
                 <tr>
                   <th scope="row">Mid</th>
                   <td>{this.state.mid}</td>
                   <td>{Math.round((this.state.mid * 1000.0) / this.state.match_number)/10 + "%"}</td>
+                  <td>{this.sortChampions(this.state.champions.mid)}</td>
                 </tr>
                 <tr>
                   <th scope="row">ADC</th>
                   <td>{this.state.adc}</td>
                   <td>{Math.round((this.state.adc * 1000.0) / this.state.match_number)/10 + "%"}</td>
+                  <td>{this.sortChampions(this.state.champions.adc)}</td>
                 </tr>
                 <tr>
                   <th scope="row">Support</th>
                   <td>{this.state.support}</td>
                   <td>{Math.round((this.state.support * 1000.0) / this.state.match_number)/10 + "%"}</td>
+                  <td>{this.sortChampions(this.state.champions.support)}</td>
                 </tr>
               </tbody>
             </table>
@@ -142,9 +187,11 @@ var App = createReactClass({
     else{
       return(
         <div className="row text-center">
-          Search the number of times the user has played a particular role on Summoners Rift, Draft Pick only.
-          <br/>
-          Currently only supports current season.
+          <div className="col-12">
+            Search the number of times the user has played a particular role on Summoners Rift, Draft Pick only.
+            <br/>
+            Currently only supports current season.
+          </div>
         </div>
       )
     }
@@ -218,19 +265,12 @@ var App = createReactClass({
           <div>
             {this.displayTable()}
           </div>
-          <div id="accordion" role="tablist">
-            <Lanes lane="Top" champions = {this.state.champions} number = {this.state.top} total_number = {this.state.match_number} id="Top" />
-            <Lanes lane="Jungle" champions = {this.state.champions} number = {this.state.jungle} total_number = {this.state.match_number} id="Jungle" />
-            <Lanes lane="Mid" champions = {this.state.champions} number = {this.state.mid} total_number = {this.state.match_number} id="Mid" />
-            <Lanes lane="ADC" champions = {this.state.champions} number = {this.state.adc} total_number = {this.state.match_number} id="ADC" />
-            <Lanes lane="Support" champions = {this.state.champions} number = {this.state.support} total_number = {this.state.match_number} id="Support" />
-          </div>
         </div>
       </div>
     );
   }
 });
-
+/*
 var Lanes = createReactClass({
   getInitialState(){
     return{
@@ -295,7 +335,7 @@ var Lanes = createReactClass({
 
   }
 })
-
+*/
 
 
 export default App;
