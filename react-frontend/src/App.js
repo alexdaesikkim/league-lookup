@@ -120,7 +120,7 @@ var App = createReactClass({
       return y[1] - x[1];
     });
     list = list.map(function(champion){
-      return champion[0] + "(" + (Math.round(champion[1] * 1000.0 / total)/10)+ "%), ";
+      return champion[0] + " (" + (Math.round(champion[1] * 1000.0 / total)/10)+ "%), ";
     })
     var str = "";
     for(var i = 0; i < (list.length < 3 ? list.length : 3); i++){

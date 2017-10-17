@@ -66,11 +66,22 @@ function parseData(matches){
           if(lanes.champions.adc[champion]) lanes.champions.adc[champion]++;
           else lanes.champions.adc[champion] = 1;
         }
-        else {
+        else if(match.role === "DUO_SUPPORT"){
           lanes.support++;
           if(lanes.champions.support[champion]) lanes.champions.support[champion]++;
           else lanes.champions.support[champion] = 1;
         }
+        /*
+          Note: While looking through .json file, I came to realization that
+          this is NOT a trivial matter as there are some games tagged with "DUO"
+          instead of "DUO_SUPPORT" or "DUO_CARRY".
+
+          Thus, for the purposes of this task, I am leaving out "DUO" and only
+          using the ones with tags.
+        */
+        //need this line to decrease the total count that will get added later
+        else lanes.total--;
+
         break;
     }
     lanes.total++;
