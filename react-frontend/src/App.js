@@ -1,5 +1,5 @@
 //eslint-disable-next-line
-import React, { Component } from 'react';
+import React from 'react';
 import './App.css';
 import $ from 'jquery';
 
@@ -211,7 +211,7 @@ var App = createReactClass({
       <div className="col-12 col-md-6 col-lg-4">
         <div className="input-group">
           <div className="input-group-btn">
-            <button type="button" className="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <button type="button" id="dropdown" className="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               {this.state.region_name}
             </button>
             <div className="dropdown-menu">
@@ -228,7 +228,7 @@ var App = createReactClass({
               <div className="dropdown-item" id="ru" onClick={this.changeRegion}>RU</div>
             </div>
           </div>
-          <input type="text" class="form-control" onChange={this.changeUsername}></input>
+          <input type="text" className="form-control" onChange={this.changeUsername}></input>
         </div>
       </div>
     );
@@ -243,7 +243,7 @@ var App = createReactClass({
             <br/>
             <div className="row justify-content-center">
               {this.dropdownButtonForm()}
-              <button className="btn btn-primary" onClick={this.expressCall}>Search</button>
+              <button className="btn btn-primary" id="submit" onClick={this.expressCall}>Search</button>
             </div>
             <br/>
           </header>

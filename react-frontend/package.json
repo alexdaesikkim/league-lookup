@@ -15,5 +15,16 @@
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
   },
-  "proxy": "http://localhost:3001"
+  "proxy": "http://localhost:3001",
+  "devDependencies": {
+    "babel-core": "^6.26.0",
+    "chai": "^4.1.2",
+    "enzyme": "^3.1.0",
+    "enzyme-adapter-react-16": "^1.0.2",
+    "ignore-styles": "^5.0.1",
+    "jsdom": "11.3.0",
+    "jsdom-global": "3.0.2",
+    "mocha": "^4.0.1",
+    "sinon": "^4.0.1"
+  }
 }
