@@ -3,7 +3,8 @@ var router = express.Router();
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.send(req.params.username);
+  res.status(200).send('Not found');
+  res.end();
 });
 
 module.exports = router;

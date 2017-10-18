@@ -1,5 +1,16 @@
-//eslint-disable-next-line
-import React, { Component } from 'react';
+/******************************************************************************
+  Front-end React page for the application
+
+  Given username and region, it returns a table with simple information for
+  the summoner, particularly the number of times they played in each lane,
+  and which champion was picked.
+
+  App was created to alleviate looking up summoner's data within short period
+  of time.
+
+  Author: Alex Kim
+******************************************************************************/
+import React from 'react';
 import './App.css';
 import $ from 'jquery';
 
@@ -13,7 +24,7 @@ var App = createReactClass({
       mid: 0,
       adc: 0,
       support: 0,
-      champions: 0,
+      champions: '',
       match_number: 0,
       region: 'na1',
       region_name: 'NA',
@@ -25,22 +36,82 @@ var App = createReactClass({
     }
   },
 
+  //event handler for username
   changeUsername(event){
     this.setState({
       username: event.target.value
     })
   },
 
-  noticePane(){
-    if(this.state.errorState !== ''){
-      return(
-        <div className={this.state.errorState} role='alert'>
-          {this.state.error}
-        </div>
-      );
+  //helper functions
+  changeRegion(event){
+    var region_name;
+    switch(event.target.id){
+      case "br1": region_name = "BR"; break;
+      case "eun1": region_name = "EUNE"; break;
+      case "euw1": region_name = "EUW"; break;
+      case "jp1": region_name = "JP"; break;
+      case "kr": region_name = "KR"; break;
+      case "la1": region_name = "LAN"; break;
+      case "la2": region_name = "LAS"; break;
+      case "na1": region_name = "NA"; break;
+      case "oc1": region_name = "OCE"; break;
+      case "tr1": region_name = "TR"; break;
+      default: region_name = "RU"; break;
+
     }
+    this.setState({
+      region: event.target.id,
+      region_name: region_name
+    })
   },
 
+  sortChampions(champions){
+    //assuming that sorting size is small and list.sort is within n log n
+    //if have time: priority queue?
+    //note to self: setting array values != REFERENCING arrays
+    var list = new Array(3);
+    list[0] = ["", 0];
+    list[1] = ["", 0];
+    list[2] = ["", 0];
+    var total = 0;
+    for(var champion in champions){
+      var count = champions[champion];
+      for(var x = 0; x < 3; x++){
+        if(count > list[x][1]){
+          console.log(list[x][0] + " " + list[x][1]);
+          console.log("x is " + x);
+          var y = 2;
+          while(y > x){
+            list[y][0] = list[y-1][0];
+            list[y][1] = list[y-1][1];
+            y--;
+          }
+          list[x][0] = champion;
+          list[x][1] = champions[champion];
+          x = 3;
+        }
+      }
+      total = total + count;
+    }
+    var length = 0;
+    for(var x = 0; x < 3; x++){
+      if(list[x][1] !== 0) length++;
+    }
+    if(length === 0){
+      return "None";
+    }
+    list = list.map(function(champion){
+      return champion[0] + " (" + (Math.round(champion[1] * 1000.0 / total)/10)+ "%), ";
+    })
+    var str = "";
+    for(var i = 0; i < length; i++){
+      str = str + list[i];
+    }
+    return str.slice(0, -2);
+  },
+
+  //ajax call
   expressCall(){
     var username = this.state.username;
     //assumption: A space counts as a character
@@ -56,88 +127,52 @@ var App = createReactClass({
         url: '/summoners/'+that.state.region+'/'+that.state.username,
         method: 'GET',
         success: function(data){
-          console.log(data.status);
-          if(data.status){
+          that.setState({
+            top: data.top,
+            jungle: data.jungle,
+            mid: data.mid,
+            adc: data.adc,
+            support: data.support,
+            champions: data.champions,
+            match_number: data.total,
+            show: true,
+            name: data.name,
+            errorState: '',
+            error: ''
+          });
+        },
+        error: function(data){
+          if(data.status === 404){
             that.setState({
-              show: false,
               errorState: 'alert alert-danger',
-              error: 'Summoner not found on region '+ that.state.region_name +'. Error code: '+data.status.status_code
+              error: 'Could not find user "' + that.state.username + '" on region ' + that.state.region_name
+            })
+          }
+          else if(data.status === 422){
+            that.setState({
+              errorState: 'alert alert-danger',
+              error: 'No match data was found for user "' + that.state.username + '"'
             })
           }
           else{
             that.setState({
-              top: data.top,
-              jungle: data.jungle,
-              mid: data.mid,
-              adc: data.adc,
-              support: data.support,
-              champions: data.champions,
-              match_number: data.total,
-              show: true,
-              name: that.state.username,
-              errorState: '',
-              error: ''
-            });
+              errorState: 'alert alert-danger',
+              error: 'Internal server error (API call returned with status ' + data.status + ')'
+            })
           }
-        },
-        error: function(data){
-          that.setState({
-            errorState: 'alert alert-danger',
-            error: 'Backend Error'
-          })
         }
       })
     }
   },
-  //not sure if this renders well
-  /*
-  displayAccordion(){
-    if(this.state.show){
-      return(
-        <div id="accordion" role="tablist">
-          <Lanes lane="Top" champions = {this.state.champions} number = {this.state.top} total_number = {this.state.match_number} id="Top" />
-          <Lanes lane="Jungle" champions = {this.state.champions} number = {this.state.jungle} total_number = {this.state.match_number} id="Jungle" />
-          <Lanes lane="Mid" champions = {this.state.champions} number = {this.state.mid} total_number = {this.state.match_number} id="Mid" />
-          <Lanes lane="ADC" champions = {this.state.champions} number = {this.state.adc} total_number = {this.state.match_number} id="ADC" />
-          <Lanes lane="Support" champions = {this.state.champions} number = {this.state.support} total_number = {this.state.match_number} id="Support" />
-        </div>
-      );
-    }
-  },
-  */
 
-  sortChampions(champions){
-    //very small size but regardless using better practice
-    var list = [];
-    var total = 0;
-    for(var champion in champions){
-      console.log(champion);
-      console.log(champions[champion]);
-      list.push([champion, champions[champion]]);
-      total = total + champions[champion];
-    }
-    list.sort(function(x, y){
-      return y[1] - x[1];
-    });
-    list = list.map(function(champion){
-      return champion[0] + " (" + (Math.round(champion[1] * 1000.0 / total)/10)+ "%), ";
-    })
-    var str = "";
-    for(var i = 0; i < (list.length < 3 ? list.length : 3); i++){
-      console.log(list[i]);
-      str = str + list[i];
-    }
-    console.log(str);
-    return str.slice(0, -2);
-  },
-
+  //forms
   displayTable(){
     if(this.state.show){
       return(
         <div>
           <div className="row justify-content-center">
             <br/>
-            <h3>{this.state.name}&#39;s data for this season&#39;s {this.state.match_number} games on region {this.state.region_name}</h3>
+            <h3>{this.state.name}&#39;s data for {this.state.match_number} games for this season on {this.state.region_name}</h3>
             <table className="table text-left">
               <thead>
                 <tr>
@@ -197,49 +232,42 @@ var App = createReactClass({
     }
   },
 
-  changeRegion(event){
-    var region_name;
-    switch(event.target.id){
-      case "br1": region_name = "BR"; break;
-      case "eun1": region_name = "EUNE"; break;
-      case "euw1": region_name = "EUW"; break;
-      case "jp1": region_name = "JP"; break;
-      case "kr": region_name = "KR"; break;
-      case "la1": region_name = "LAN"; break;
-      case "la2": region_name = "LAS"; break;
-      case "na1": region_name = "NA"; break;
-      case "oc1": region_name = "OCE"; break;
-      case "tr1": region_name = "TR"; break;
-      default: region_name = "RU"; break;
-
-    }
-    this.setState({
-      region: event.target.id,
-      region_name: region_name
-    })
-  },
-
-  dropdownButton(){
+  dropdownButtonForm(){
     return(
-      <div className="btn-group">
-        <button type="button" className="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          {this.state.region_name}
-        </button>
-        <div className="dropdown-menu">
-          <div className="dropdown-item" id="br1" onClick={this.changeRegion}>BR</div>
-          <div className="dropdown-item" id="eun1" onClick={this.changeRegion}>EUNE</div>
-          <div className="dropdown-item" id="euw1" onClick={this.changeRegion}>EUW</div>
-          <div className="dropdown-item" id="jp1" onClick={this.changeRegion}>JP</div>
-          <div className="dropdown-item" id="kr" onClick={this.changeRegion}>KR</div>
-          <div className="dropdown-item" id="la1" onClick={this.changeRegion}>LAN</div>
-          <div className="dropdown-item" id="la2" onClick={this.changeRegion}>LAS</div>
-          <div className="dropdown-item" id="na1" onClick={this.changeRegion}>NA</div>
-          <div className="dropdown-item" id="oc1" onClick={this.changeRegion}>OCE</div>
-          <div className="dropdown-item" id="tr1" onClick={this.changeRegion}>TR</div>
-          <div className="dropdown-item" id="ru" onClick={this.changeRegion}>RU</div>
+      <div className="col-12 col-md-6 col-lg-4">
+        <div className="input-group">
+          <div className="input-group-btn">
+            <button type="button" id="dropdown" className="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              {this.state.region_name}
+            </button>
+            <div className="dropdown-menu">
+              <div className="dropdown-item" id="br1" onClick={this.changeRegion}>BR</div>
+              <div className="dropdown-item" id="eun1" onClick={this.changeRegion}>EUNE</div>
+              <div className="dropdown-item" id="euw1" onClick={this.changeRegion}>EUW</div>
+              <div className="dropdown-item" id="jp1" onClick={this.changeRegion}>JP</div>
+              <div className="dropdown-item" id="kr" onClick={this.changeRegion}>KR</div>
+              <div className="dropdown-item" id="la1" onClick={this.changeRegion}>LAN</div>
+              <div className="dropdown-item" id="la2" onClick={this.changeRegion}>LAS</div>
+              <div className="dropdown-item" id="na1" onClick={this.changeRegion}>NA</div>
+              <div className="dropdown-item" id="oc1" onClick={this.changeRegion}>OCE</div>
+              <div className="dropdown-item" id="tr1" onClick={this.changeRegion}>TR</div>
+              <div className="dropdown-item" id="ru" onClick={this.changeRegion}>RU</div>
+            </div>
+          </div>
+          <input type="text" className="form-control" onChange={this.changeUsername}></input>
         </div>
       </div>
     );
+  },
+
+  noticePane(){
+    if(this.state.errorState !== ''){
+      return(
+        <div className={this.state.errorState + " text-center"} role='alert'>
+          {this.state.error}
+        </div>
+      );
+    }
   },
 
   render: function(){
@@ -249,10 +277,9 @@ var App = createReactClass({
           <header className="App-header">
             <h1 className="App-title">Summoner Lookup</h1>
             <br/>
-            <div>
-              {this.dropdownButton()} <input onChange={this.changeUsername}></input>
-              <br/>
-              <button className="btn btn-primary" onClick={this.expressCall}>Search</button>
+            <div className="row justify-content-center">
+              {this.dropdownButtonForm()}
+              <button className="btn btn-primary" id="submit" onClick={this.expressCall}>Search</button>
             </div>
             <br/>
           </header>
@@ -270,72 +297,5 @@ var App = createReactClass({
     );
   }
 });
-/*
-var Lanes = createReactClass({
-  getInitialState(){
-    return{
-      champions: [],
-      total_number: 0
-    }
-  },
-
-  sortChampions(){
-    //very small size but regardless using better practice
-    var list = [];
-    var champObj = this.props.chamipons;
-    var total = 0;
-    for(var champion in champObj){
-      list.push([champion, champObj[champion]]);
-      total = total + champObj[champion];
-    }
-    list.sort(function(x, y){
-      return x[1] = y[1];
-    });
-    this.setState({
-      chamipons: list,
-      total_number: total
-    })
-
-  },
-
-  render: function(){
-
-    var champs = this.state.champions.map(function(champ){
-      return(
-        <div>
-          {champ[0]} + " " + {champ[1]};
-        </div>
-      )
-    })
-
-    return(
-      <div className="card">
-        <div className="card-header" role="tab" id={"heading_"+this.props.lane}>
-          <h5 className="mb-0">
-            <a data-toggle="collapse" href={"#"+this.props.lane} aria-expanded="true" aria-controls={this.props.lane}>
-              {this.props.lane}
-            </a>
-            <span className="text-right">
-              {Math.round((this.props.number * 1000.0) / this.props.total_number)/10 + "%"}
-            </span>
-          </h5>
-        </div>
-
-        <div id={this.props.lane} className="collapse" role="tabpanel" aria-labelledby={"heading_"+this.props.lane} data-parent="#accordion">
-          <div className="container">
-            {this.props.number}
-            <br/>
-            Most played Champions:
-            {champs}
-            <br/>
-          </div>
-        </div>
-      </div>
-    );
-
-  }
-})
-*/
-
 
 export default App;

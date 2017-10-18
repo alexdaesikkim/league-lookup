@@ -1,27 +1,38 @@
+/******************************************************************************
+  Router to provide lookups of summoner's data
+
+  Given username and region, it returns the number of times a summoner has
+  played in each lane for the current season, and how many times they played
+  a particular champion for each lane.
+
+  If test is set to true, it uses existing json for testing.
+
+  Author: Alex Kim
+******************************************************************************/
+
 var express = require('express');
 var qs = require('querystring');
 var request = require('request');
 var router = express.Router();
-var api_key = require('./api_key').key;
 const test_summoner_json = require('./summoner_json');
 const test_matches_json = require('./matches_json');
 const champions_json = require('./champions.json');
-var test = true;
+var test = false;
 
-const key = api_key.key;
+//for testing purposes
+module.exports.test = test;
 
 //variable key is set in such way: var key = "?api_key=<API KEY>"
+const api_key = require('./api_key').key;
 
-var region = '';
-var accountId = 0;
-var return_json = null;
-
+//helper functions
 function idToName(id){
   return champions_json.data[id].name;
 }
 
-function parseData(matches){
+function parseData(matches, name){
   var lanes = {
+    name: name,
     top: 0,
     jungle: 0,
     mid: 0,
@@ -34,12 +45,10 @@ function parseData(matches){
       adc: {},
       support: {}
     },
-    total: 0
     //Riot API's bug: If done by season total games is not accurate
+    //need to manually calculate
+    total: 0
   }
-
-  var champions = {};
-  console.log("TESTING HEH");
 
   matches.matches.map(function(match){
     var lane = match.lane;
@@ -73,13 +82,19 @@ function parseData(matches){
         }
         /*
           Note: While looking through .json file, I came to realization that
-          this is NOT a trivial matter as there are some games tagged with "DUO"
-          instead of "DUO_SUPPORT" or "DUO_CARRY".
+          sorting between ADC and SUPPORT is NOT a trivial matter as there are
+          some games tagged with "DUO" instead of "DUO_SUPPORT" or "DUO_CARRY".
+
+          Upon further searching, some players had to come up with their own
+          algorithms to pick out which lane a player has played in (maybe for
+          previous seasons, or for the old draft mode without picking which
+          role they decided to play).
 
           Thus, for the purposes of this task, I am leaving out "DUO" and only
           using the ones with tags.
+
+          Next line is to decrease the total count only if match.role is "DUO"
         */
-        //need this line to decrease the total count that will get added later
         else lanes.total--;
 
         break;
@@ -89,13 +104,12 @@ function parseData(matches){
   return lanes;
 }
 
-function getAccountId(username, region, callback){
+//grab account information from API
+function getAccount(username, region, callback){
   if(test){
-    accountId = test_summoner_json.accountId;
-    console.log("Test, accountid grabbed from json. Account ID is " + accountId)
-    getRecentMatches("na1", function(){
-      callback();
-    });
+    account = test_summoner_json[username];
+    console.log("Test, account grabbed from json.");
+    callback(account);
     return;
   }
 
@@ -106,10 +120,9 @@ function getAccountId(username, region, callback){
 
   request(options, function(error, response, body){
       if(!error && response.statusCode === 200){
-        var r = JSON.parse(body);
-        accountId = r.accountId;
-        console.log("grabbed account id");
-        callback();
+        var return_json = JSON.parse(body);
+        console.log("grabbed account data");
+        callback(return_json);
       }
       else if(error){
         console.log(error);
@@ -117,21 +130,22 @@ function getAccountId(username, region, callback){
       }
       else{
         console.log("bad request");
-        return_json = JSON.parse(body);
-        console.log(options.url);
-        console.log(return_json)
-        callback();
+        var return_json = JSON.parse(body);
+        callback(return_json);
       }
     }
   );
 }
 
-function getRecentMatches(region, callback){
+//grab matches, return the parsed data
+function getRecentMatches(region, accountId, name, callback){
   if(test){
-    match_json = test_matches_json;
+    match_json = test_matches_json[accountId];
     console.log("Test, matches grabbed from json");
-    return_json = parseData(match_json);
-    callback();
+    if(match_json.status){
+      callback(match_json);
+    }
+    else callback(parseData(match_json, name));
     return;
   }
 
@@ -142,46 +156,57 @@ function getRecentMatches(region, callback){
 
   request(options, function(error, response, body){
     if(!error && response.statusCode === 200){
-      console.log("grabbed matches");
-      return_json = parseData(JSON.parse(body));
-      callback();
+      callback(parseData(JSON.parse(body), name));
     }
     else if(error){
       console.log(error);
-      callback();
+      callback(error);
     }
     else{
       console.log("bad request for matches");
-      //theoretically shouldn't happen because given correct ID, it should return null array
-      callback();
+      //should only return for 422. Very rarely, 404.
+      callback(JSON.parse(body));
     }
   })
 }
 
+//router
 router.get('/:region/:username/', function(req, res, next) {
   if(test){
-    getAccountId("supernovamaniac", "na1", function(){
-      console.log("Test finished");
-      res.json(return_json);
-      return_json = null;
-      res.end();
-    })
-    return;
+    console.log("Test enabled. Using local json for username " + req.params.username);
   }
   console.log("Retrieving Data from region " + req.params.region+ " for user "+req.params.username);
-  //note to self: look at async/await and try to adopt that. this code, while functional, just looks terrible to look at
-  getAccountId(req.params.username, req.params.region, function(){
-      if(return_json){
-        res.json(return_json);
-        return_json = null;
-        res.end();
+  //note to self: async/await. is it better here?
+  getAccount(req.params.username, req.params.region, function(account_data){
+      if(account_data.status){
+        if(account_data.status.status_code === 404){
+          console.log("No user found");
+        }
+        else{
+          console.log("API Call Error");
+          console.log(account_data);
+        }
+        res.sendStatus(account_data.status.status_code);
       }
       else{
-        getRecentMatches(req.params.region, function(){
+        getRecentMatches(req.params.region, account_data.accountId, account_data.name, function(match_data){
+          if(match_data.status || match_data.total === 0){
+            //will check match_data.total first, which avoids null status_code issue
+            if(match_data.total === 0 || match_data.status.status_code === 422){
+              console.log("422");
+              res.sendStatus(422);
+              return;
+            }
+            if(match_data.status.status_code === 404){
+              console.log("404");
+              res.sendStatus(404);
+              //very rare case where account was made but no game was found. If it was 422 it would be different story
+              //i.e. account_id: 240512585
+              return;
+            }
+          }
           console.log("Finished Grabbing Matches");
-          res.json(return_json);
-          return_json = null;
-          res.end();
+          res.json(match_data);
         }
       )}
     }
