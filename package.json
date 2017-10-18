@@ -14,5 +14,14 @@
     "morgan": "~1.9.0",
     "request": "^2.83.0",
     "serve-favicon": "~2.4.5"
+  },
+  "devDependencies": {
+    "enzyme": "^3.1.0",
+    "expect": "^21.2.1",
+    "jsdom": "^11.3.0",
+    "mocha": "^4.0.1",
+    "react-addons-test-utils": "^15.6.2",
+    "should": "^13.1.2",
+    "supertest": "^3.0.0"
   }
 }
