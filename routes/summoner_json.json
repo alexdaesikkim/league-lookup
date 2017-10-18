@@ -1,10 +1,36 @@
 {
-  "summoner": {
+  "supernovamaniac": {
     "profileIconId": 1259,
     "name": "supernovamaniac",
     "summonerLevel": 30,
     "accountId": 37934996,
     "id": 28747093,
     "revisionDate": 1496213480000
+  },
+  "menohaxor": {
+    "profileIconId": 3006,
+    "name": "MeNoHaxor",
+    "summonerLevel": 30,
+    "accountId": 98557,
+    "id": 71715,
+    "revisionDate": 1508232593000
+  },
+  "testnotfound": {
+    "status": {
+        "status_code": 404,
+        "message": "Data not found - summoner not found"
+    }
+  },
+  "testservererror": {
+    "status": {
+      "status_code": 500,
+      "message": "Internal server error"
+    }
+  },
+  "baduser1": {
+    "accountId": 1
+  },
+  "baduser2": {
+    "accountId": 2
   }
 }
