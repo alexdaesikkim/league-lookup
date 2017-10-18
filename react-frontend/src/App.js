@@ -1,4 +1,15 @@
-//eslint-disable-next-line
+/******************************************************************************
+  Front-end React page for the application
+
+  Given username and region, it returns a table with simple information for
+  the summoner, particularly the number of times they played in each lane,
+  and which champion was picked.
+
+  App was created to alleviate looking up summoner's data within short period
+  of time.
+
+  Author: Alex Kim
+******************************************************************************/
 import React from 'react';
 import './App.css';
 import $ from 'jquery';
@@ -13,7 +24,7 @@ var App = createReactClass({
       mid: 0,
       adc: 0,
       support: 0,
-      champions: 0,
+      champions: '',
       match_number: 0,
       region: 'na1',
       region_name: 'NA',
@@ -25,22 +36,82 @@ var App = createReactClass({
     }
   },
 
+  //event handler for username
   changeUsername(event){
     this.setState({
       username: event.target.value
     })
   },
 
-  noticePane(){
-    if(this.state.errorState !== ''){
-      return(
-        <div className={this.state.errorState + " text-center"} role='alert'>
-          {this.state.error}
-        </div>
-      );
+  //helper functions
+  changeRegion(event){
+    var region_name;
+    switch(event.target.id){
+      case "br1": region_name = "BR"; break;
+      case "eun1": region_name = "EUNE"; break;
+      case "euw1": region_name = "EUW"; break;
+      case "jp1": region_name = "JP"; break;
+      case "kr": region_name = "KR"; break;
+      case "la1": region_name = "LAN"; break;
+      case "la2": region_name = "LAS"; break;
+      case "na1": region_name = "NA"; break;
+      case "oc1": region_name = "OCE"; break;
+      case "tr1": region_name = "TR"; break;
+      default: region_name = "RU"; break;
+
     }
+    this.setState({
+      region: event.target.id,
+      region_name: region_name
+    })
   },
 
+  sortChampions(champions){
+    //assuming that sorting size is small and list.sort is within n log n
+    //if have time: priority queue?
+    //note to self: setting array values != REFERENCING arrays
+    var list = new Array(3);
+    list[0] = ["", 0];
+    list[1] = ["", 0];
+    list[2] = ["", 0];
+    var total = 0;
+    for(var champion in champions){
+      var count = champions[champion];
+      for(var x = 0; x < 3; x++){
+        if(count > list[x][1]){
+          console.log(list[x][0] + " " + list[x][1]);
+          console.log("x is " + x);
+          var y = 2;
+          while(y > x){
+            list[y][0] = list[y-1][0];
+            list[y][1] = list[y-1][1];
+            y--;
+          }
+          list[x][0] = champion;
+          list[x][1] = champions[champion];
+          x = 3;
+        }
+      }
+      total = total + count;
+    }
+    var length = 0;
+    for(var x = 0; x < 3; x++){
+      if(list[x][1] !== 0) length++;
+    }
+    if(length === 0){
+      return "None";
+    }
+    list = list.map(function(champion){
+      return champion[0] + " (" + (Math.round(champion[1] * 1000.0 / total)/10)+ "%), ";
+    })
+    var str = "";
+    for(var i = 0; i < length; i++){
+      str = str + list[i];
+    }
+    return str.slice(0, -2);
+  },
+
+  //ajax call
   expressCall(){
     var username = this.state.username;
     //assumption: A space counts as a character
@@ -80,7 +151,7 @@ var App = createReactClass({
           else if(data.status === 422){
             that.setState({
               errorState: 'alert alert-danger',
-              error: 'No match data was found for user "' + that.state.username
+              error: 'No match data was found for user "' + that.state.username + '"'
             })
           }
           else{
@@ -94,30 +165,7 @@ var App = createReactClass({
     }
   },
 
-  sortChampions(champions){
-    //very small size but regardless using better practice
-    var list = [];
-    var total = 0;
-    for(var champion in champions){
-      list.push([champion, champions[champion]]);
-      total = total + champions[champion];
-    }
-    if(list.length === 0){
-      return "None";
-    }
-    list.sort(function(x, y){
-      return y[1] - x[1];
-    });
-    list = list.map(function(champion){
-      return champion[0] + " (" + (Math.round(champion[1] * 1000.0 / total)/10)+ "%), ";
-    })
-    var str = "";
-    for(var i = 0; i < (list.length < 3 ? list.length : 3); i++){
-      str = str + list[i];
-    }
-    return str.slice(0, -2);
-  },
-
+  //forms
   displayTable(){
     if(this.state.show){
       return(
@@ -184,28 +232,6 @@ var App = createReactClass({
     }
   },
 
-  changeRegion(event){
-    var region_name;
-    switch(event.target.id){
-      case "br1": region_name = "BR"; break;
-      case "eun1": region_name = "EUNE"; break;
-      case "euw1": region_name = "EUW"; break;
-      case "jp1": region_name = "JP"; break;
-      case "kr": region_name = "KR"; break;
-      case "la1": region_name = "LAN"; break;
-      case "la2": region_name = "LAS"; break;
-      case "na1": region_name = "NA"; break;
-      case "oc1": region_name = "OCE"; break;
-      case "tr1": region_name = "TR"; break;
-      default: region_name = "RU"; break;
-
-    }
-    this.setState({
-      region: event.target.id,
-      region_name: region_name
-    })
-  },
-
   dropdownButtonForm(){
     return(
       <div className="col-12 col-md-6 col-lg-4">
@@ -232,6 +258,16 @@ var App = createReactClass({
         </div>
       </div>
     );
+  },
+
+  noticePane(){
+    if(this.state.errorState !== ''){
+      return(
+        <div className={this.state.errorState + " text-center"} role='alert'>
+          {this.state.error}
+        </div>
+      );
+    }
   },
 
   render: function(){

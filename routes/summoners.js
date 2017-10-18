@@ -1,3 +1,15 @@
+/******************************************************************************
+  Router to provide lookups of summoner's data
+
+  Given username and region, it returns the number of times a summoner has
+  played in each lane for the current season, and how many times they played
+  a particular champion for each lane.
+
+  If test is set to true, it uses existing json for testing.
+
+  Author: Alex Kim
+******************************************************************************/
+
 var express = require('express');
 var qs = require('querystring');
 var request = require('request');
@@ -5,7 +17,7 @@ var router = express.Router();
 const test_summoner_json = require('./summoner_json');
 const test_matches_json = require('./matches_json');
 const champions_json = require('./champions.json');
-var test = true;
+var test = false;
 
 //for testing purposes
 module.exports.test = test;
@@ -13,6 +25,7 @@ module.exports.test = test;
 //variable key is set in such way: var key = "?api_key=<API KEY>"
 const api_key = require('./api_key').key;
 
+//helper functions
 function idToName(id){
   return champions_json.data[id].name;
 }
@@ -32,11 +45,10 @@ function parseData(matches, name){
       adc: {},
       support: {}
     },
-    total: 0
     //Riot API's bug: If done by season total games is not accurate
+    //need to manually calculate
+    total: 0
   }
-
-  var champions = {};
 
   matches.matches.map(function(match){
     var lane = match.lane;
@@ -70,13 +82,19 @@ function parseData(matches, name){
         }
         /*
           Note: While looking through .json file, I came to realization that
-          this is NOT a trivial matter as there are some games tagged with "DUO"
-          instead of "DUO_SUPPORT" or "DUO_CARRY".
+          sorting between ADC and SUPPORT is NOT a trivial matter as there are
+          some games tagged with "DUO" instead of "DUO_SUPPORT" or "DUO_CARRY".
+
+          Upon further searching, some players had to come up with their own
+          algorithms to pick out which lane a player has played in (maybe for
+          previous seasons, or for the old draft mode without picking which
+          role they decided to play).
 
           Thus, for the purposes of this task, I am leaving out "DUO" and only
           using the ones with tags.
+
+          Next line is to decrease the total count only if match.role is "DUO"
         */
-        //need this line to decrease the total count that will get added later
         else lanes.total--;
 
         break;
@@ -86,7 +104,8 @@ function parseData(matches, name){
   return lanes;
 }
 
-function getAccountId(username, region, callback){
+//grab account information from API
+function getAccount(username, region, callback){
   if(test){
     account = test_summoner_json[username];
     console.log("Test, account grabbed from json.");
@@ -118,6 +137,7 @@ function getAccountId(username, region, callback){
   );
 }
 
+//grab matches, return the parsed data
 function getRecentMatches(region, accountId, name, callback){
   if(test){
     match_json = test_matches_json[accountId];
@@ -150,13 +170,14 @@ function getRecentMatches(region, accountId, name, callback){
   })
 }
 
+//router
 router.get('/:region/:username/', function(req, res, next) {
   if(test){
     console.log("Test enabled. Using local json for username " + req.params.username);
   }
   console.log("Retrieving Data from region " + req.params.region+ " for user "+req.params.username);
   //note to self: async/await. is it better here?
-  getAccountId(req.params.username, req.params.region, function(account_data){
+  getAccount(req.params.username, req.params.region, function(account_data){
       if(account_data.status){
         if(account_data.status.status_code === 404){
           console.log("No user found");
