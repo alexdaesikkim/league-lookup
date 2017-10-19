@@ -20,7 +20,7 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'react-frontend/build')));
 
 app.use('/', index);
 app.use('/summoners', summoners);
@@ -42,6 +42,9 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
+
+//heroku dynamically assigns ports
+const port = process.env.PORT || 3001;
 
 app.listen(3001);
 
