@@ -20,6 +20,8 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
+
+//change which static file to serve
 app.use(express.static(path.join(__dirname, 'react-frontend/build')));
 
 app.use('/', index);
@@ -46,6 +48,6 @@ app.use(function(err, req, res, next) {
 //heroku dynamically assigns ports
 const port = process.env.PORT || 3001;
 
-app.listen(3001);
+app.listen(port);
 
 module.exports = app;
