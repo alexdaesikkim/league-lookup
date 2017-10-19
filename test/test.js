@@ -3,10 +3,6 @@ const should = require('should');
 const app = require('../app.js');
 const summoners = require('../routes/summoners.js');
 
-const summoner_json = require('../routes/summoner_json');
-const matches_json = require('../routes/matches_json');
-const champions_json = require('../routes/champions.json');
-
 describe('testing HTTP calls', function() {
   it('respond correctly for supernovamaniac', function(done){
     request(app)

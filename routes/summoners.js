@@ -14,9 +14,9 @@ var express = require('express');
 var qs = require('querystring');
 var request = require('request');
 var router = express.Router();
-const test_summoner_json = require('./summoner_json');
-const test_matches_json = require('./matches_json');
-const champions_json = require('./champions.json');
+const test_summoner_json = require('../static_json/summoner_json');
+const test_matches_json = require('../static_json/matches_json');
+const champions_json = require('../static_json/champions.json');
 var test = false;
 
 //for testing purposes

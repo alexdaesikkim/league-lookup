@@ -14,7 +14,11 @@ import React from 'react';
 import './App.css';
 import $ from 'jquery';
 
+//testing purposes
+const static_data = require('./api_returns.json');
+
 var createReactClass = require('create-react-class');
+var test = false;
 
 var App = createReactClass({
   getInitialState(){
@@ -79,8 +83,6 @@ var App = createReactClass({
       var count = champions[champion];
       for(var x = 0; x < 3; x++){
         if(count > list[x][1]){
-          console.log(list[x][0] + " " + list[x][1]);
-          console.log("x is " + x);
           var y = 2;
           while(y > x){
             list[y][0] = list[y-1][0];
@@ -95,6 +97,8 @@ var App = createReactClass({
       total = total + count;
     }
     var length = 0;
+    //functional scope, but shouldn't matter
+    //estlint-disable-next-line
     for(var x = 0; x < 3; x++){
       if(list[x][1] !== 0) length++;
     }
@@ -114,6 +118,7 @@ var App = createReactClass({
   //ajax call
   expressCall(){
     var username = this.state.username;
+
     //assumption: A space counts as a character
     if(username === '' || username.length < 3 || username.length > 16){
       this.setState({
@@ -122,12 +127,10 @@ var App = createReactClass({
       })
     }
     else{
-      var that = this;
-      $.ajax({
-        url: '/summoners/'+that.state.region+'/'+that.state.username,
-        method: 'GET',
-        success: function(data){
-          that.setState({
+      if(test){
+        var data = static_data[username];
+        if(!data.status){
+          this.setState({
             top: data.top,
             jungle: data.jungle,
             mid: data.mid,
@@ -140,28 +143,70 @@ var App = createReactClass({
             errorState: '',
             error: ''
           });
-        },
-        error: function(data){
+        }
+        else{
           if(data.status === 404){
-            that.setState({
+            this.setState({
               errorState: 'alert alert-danger',
-              error: 'Could not find user "' + that.state.username + '" on region ' + that.state.region_name
+              error: 'Could not find user "' + this.state.username + '" on region ' + this.state.region_name
             })
           }
           else if(data.status === 422){
-            that.setState({
+            this.setState({
               errorState: 'alert alert-danger',
-              error: 'No match data was found for user "' + that.state.username + '"'
+              error: 'No match data was found for user "' + this.state.username + '"'
             })
           }
           else{
-            that.setState({
+            this.setState({
               errorState: 'alert alert-danger',
               error: 'Internal server error (API call returned with status ' + data.status + ')'
             })
           }
         }
-      })
+      }
+      else{
+        var that = this;
+        $.ajax({
+          url: '/summoners/'+that.state.region+'/'+that.state.username,
+          method: 'GET',
+          success: function(data){
+            that.setState({
+              top: data.top,
+              jungle: data.jungle,
+              mid: data.mid,
+              adc: data.adc,
+              support: data.support,
+              champions: data.champions,
+              match_number: data.total,
+              show: true,
+              name: data.name,
+              errorState: '',
+              error: ''
+            });
+          },
+          error: function(data){
+            if(data.status === 404){
+              that.setState({
+                errorState: 'alert alert-danger',
+                error: 'Could not find user "' + that.state.username + '" on region ' + that.state.region_name
+              })
+            }
+            else if(data.status === 422){
+              that.setState({
+                errorState: 'alert alert-danger',
+                error: 'No match data was found for user "' + that.state.username + '"'
+              })
+            }
+            else{
+              that.setState({
+                errorState: 'alert alert-danger',
+                error: 'Internal server error (API call returned with status ' + data.status + ')'
+              })
+            }
+          }
+        })
+      }
     }
   },
 

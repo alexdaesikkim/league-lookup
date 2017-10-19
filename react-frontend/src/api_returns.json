@@ -1,0 +1,16 @@
+{
+  "supernovamaniac": {"name":"supernovamaniac","top":1,"jungle":0,"mid":2,"adc":18,"support":4,"champions":{"top":{"Gnar":1},"jungle":{},"mid":{"Ahri":2},"adc":{"Lucian":1,"Ezreal":1,"Caitlyn":14,"Miss Fortune":2},"support":{"Nami":3,"Thresh":1}},"total":25},
+  "menohaxor": {"name":"MeNoHaxor","top":0,"jungle":6,"mid":3,"adc":5,"support":83,"champions":{"top":{},"jungle":{"Ezreal":2,"Elise":1,"Nunu":2,"Lulu":1},"mid":{"Orianna":1,"Karma":1,"Corki":1},"adc":{"Tristana":3,"Caitlyn":1,"Varus":1},"support":{"Karma":5,"Janna":4,"Braum":1,"Rakan":25,"Lulu":17,"Morgana":8,"Taric":4,"Sona":9,"Nami":3,"Thresh":7}},"total":97},
+  "testnotfound": {
+    "status": 404
+  },
+  "testservererror": {
+    "status": 500
+  },
+  "baduser1": {
+    "status": 404
+  },
+  "baduser2": {
+    "status": 422
+  }
+}
