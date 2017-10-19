@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "heroku-prebuild": "npm install",
+    "start": "node app.js",
+    "heroku-postbuild": "cd react-frontend && npm install --only=dev && npm install && npm run build"
   },
   "dependencies": {
     "body-parser": "~1.18.2",

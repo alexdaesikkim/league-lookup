@@ -225,7 +225,7 @@ var App = createReactClass({
           <div className="col-12">
             Search the number of times the user has played a particular role on Summoners Rift, Draft Pick only.
             <br/>
-            Currently only supports current season.
+            Only supports current season.
           </div>
         </div>
       )
